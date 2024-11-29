@@ -6,6 +6,12 @@ Simply add this to your project via
 
 and `std.log` functions will write to a file called `log` in your current working directory.
 
+> **NOTE**
+>
+> **This is not a logging library!**
+> It offers a function you can pass to Zig's `std_options`'s `.logFn` so `std.log` calls write to a
+> file instead of STDOUT.
+
 ## Usage
 
 1. Install the library by running
