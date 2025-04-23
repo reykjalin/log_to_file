@@ -1,4 +1,4 @@
-// Copyright 2024 - 2024, Kristófer Reykjalín and the log_to_file contributors.
+// Copyright 2024 - 2025, Kristófer Reykjalín and the log_to_file contributors.
 // SPDX-License-Identifier: BSD-3-Clause
 
 const std = @import("std");
