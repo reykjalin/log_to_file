@@ -14,6 +14,10 @@ STDOUT/STDERR.
 
 ## Usage
 
+> [!IMPORTANT]
+> If the logging function fails to write to the log file, e.g. due to a permissions issue, it will
+> fallback to `std.log.defaultLog()` instead of silently failing.
+
 1. Install the library by running
    `zig fetch --save git+https://git.sr.ht/~reykjalin/log_to_file.zig`
    in your project.
@@ -47,9 +51,13 @@ pub const std_options: std.Options = .{
 };
 ```
 
-Now, whenever you call the `std.log` functions they should be written to a `logs/out.log` file in
-your current working directory when you make a `Debug` build, and `~/.local/logs/out.log` in a
-`Relase` build.
+Now, whenever you call the `std.log` functions they should be written to a
+`logs/<executable_name>.log` file in your current working directory when you make a `Debug` build,
+and `~/.local/logs/<executable_name>.log` in a `Release` build.
+
+For example, if your executable is called `example` (as is the case with
+[the examples](./examples/README.md)) the logs will be in `./logs/example.log` by default in a
+`Debug` build.
 
 ## Configuration
 
@@ -70,15 +78,22 @@ pub const log_to_file_options: ltf.Options = .{
 };
 
 // Logs will be saved to:
-//   * ./new-logs/out.log in Debug mode.
-//   * ./new-logs/out.log in Release mode.
+//   * ./new-logs/<executable_name>.log in Debug mode.
+//   * ./new-logs/<executable_name>.log in Release mode.
 pub const log_to_file_options: ltf.Options = .{
     .storage_path = "new-logs",
 };
 
 // Logs will be saved to:
-//   * ./app-logs/out.log in Debug mode.
-//   * ./app-logs/out.log in Release mode.
+//   * /var/logs/<executable_name>.log in Debug mode.
+//   * /var/logs/<executable_name>.log in Release mode.
+pub const log_to_file_options: ltf.Options = .{
+    .storage_path = "/var/logs",
+};
+
+// Logs will be saved to:
+//   * ./app-logs/app.log in Debug mode.
+//   * ./app-logs/app.log in Release mode.
 pub const log_to_file_options: ltf.Options = .{
     .log_file_name = "app.log",
     .storage_path = "app-logs",

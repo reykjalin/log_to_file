@@ -11,10 +11,14 @@
 
 * `pub const log_to_file_path` no longer works. Use `pub const log_to_file_options` instead. See
   [the readme](./README.md) for deatils or take a look at [the examples](./examples/README.md).
-* The default, no-config log location is now `./logs/out.log` **in `Debug` mode**.
-* The default, no-config log location is now `~/.local/logs/out.log` **in `ReleaseFast`,
-  `ReleaseSmall`, and `ReleaseSafe` modes**.
+* The default, no-config log location is now `./logs/<executable_name>.log` **in `Debug` mode**.
+* The default, no-config log location is now `~/.local/logs/<executable_name>.log` **in
+  `ReleaseFast`, `ReleaseSmall`, and `ReleaseSafe` modes**.
 
+### Improvements
+
+* The logging function will now fallback to `std.log.defaultLog()` if it fails to write to the log
+  file.
 
 ## 1.0.0
 

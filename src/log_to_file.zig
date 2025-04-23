@@ -10,14 +10,9 @@ pub const Options = struct {
     storage_path: ?[]const u8 = null,
 };
 
-const PrivateOptions = struct {
-    log_file_name: []const u8,
-    storage_path: ?[]const u8 = null,
-};
-
-var options: PrivateOptions = if (@hasDecl(root, "log_to_file_options"))
+var options: Options = if (@hasDecl(root, "log_to_file_options"))
     .{
-        .log_file_name = root.log_to_file_options.log_file_name orelse "out.log",
+        .log_file_name = root.log_to_file_options.log_file_name,
         .storage_path = if (root.log_to_file_options.storage_path) |p|
             p
         else if (builtin.mode == .Debug)
@@ -27,7 +22,7 @@ var options: PrivateOptions = if (@hasDecl(root, "log_to_file_options"))
     }
 else
     .{
-        .log_file_name = "out.log",
+        .log_file_name = null,
         .storage_path = if (builtin.mode == .Debug)
             "logs"
         else
@@ -42,6 +37,25 @@ var allocator: std.heap.ThreadSafeAllocator = .{
 const fba = allocator.allocator();
 
 var write_to_log_mutex: std.Thread.Mutex = .{};
+
+fn maybeInitLogFileName() void {
+    if (options.log_file_name != null) return;
+
+    var buf: [std.fs.max_path_bytes]u8 = undefined;
+    const exe_path = std.fs.selfExePath(&buf) catch {
+        options.log_file_name = "out.log";
+        return;
+    };
+
+    options.log_file_name = std.fmt.allocPrint(
+        fba,
+        "{s}.log",
+        .{std.fs.path.basename(exe_path)},
+    ) catch {
+        options.log_file_name = "out.log";
+        return;
+    };
+}
 
 fn maybeInitStoragePath() void {
     if (options.storage_path != null) return;
@@ -67,7 +81,12 @@ pub fn log_to_file(
     args: anytype,
 ) void {
     maybeInitStoragePath();
-    if (options.storage_path == null) return;
+    if (options.storage_path == null)
+        return std.log.defaultLog(message_level, scope, format, args);
+
+    maybeInitLogFileName();
+    if (options.log_file_name == null)
+        return std.log.defaultLog(message_level, scope, format, args);
 
     // Get level text and log prefix.
     // See https://ziglang.org/documentation/0.14.0/std/#std.log.defaultLog.
@@ -76,14 +95,17 @@ pub fn log_to_file(
 
     // Get a handle for the log file.
     const cwd = std.fs.cwd();
-    const log_dir = cwd.makeOpenPath(options.storage_path.?, .{}) catch return;
+
+    const log_dir = cwd.makeOpenPath(options.storage_path.?, .{}) catch
+        return std.log.defaultLog(message_level, scope, format, args);
+
     const log = log_dir.createFile(
-        options.log_file_name,
+        options.log_file_name.?,
         .{ .truncate = false },
-    ) catch return;
+    ) catch return std.log.defaultLog(message_level, scope, format, args);
 
     // Move the write index to the end of the file.
-    log.seekFromEnd(0) catch return;
+    log.seekFromEnd(0) catch return std.log.defaultLog(message_level, scope, format, args);
 
     // Get a writer.
     // See https://ziglang.org/documentation/0.14.0/std/#std.log.defaultLog.
@@ -98,7 +120,9 @@ pub fn log_to_file(
     // Write to the log file.
     // See https://ziglang.org/documentation/0.14.0/std/#std.log.defaultLog.
     nosuspend {
-        writer.print(level_txt ++ prefix2 ++ format ++ "\n", args) catch return;
-        bw.flush() catch return;
+        writer.print(level_txt ++ prefix2 ++ format ++ "\n", args) catch
+            return std.log.defaultLog(message_level, scope, format, args);
+
+        bw.flush() catch return std.log.defaultLog(message_level, scope, format, args);
     }
 }
