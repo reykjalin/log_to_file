@@ -1,22 +1,23 @@
 # log_to_file.zig
 
-An easy way to change the default `std.log` functions to write to a file instead of logging to
-STDOUT.
-Simply add this to your project via
+An easy way to change Zig's default `std.log` functions to write to a file instead of logging to
+STDOUT/STDERR.
 
-and `std.log` functions will write to a file called `log` in your current working directory.
-
-> **NOTE**
->
+> [!NOTE]
 > **This is not a logging library!**
 > It offers a function you can pass to Zig's `std_options`'s `.logFn` so `std.log` calls write to a
 > file instead of STDOUT.
 
+> [!IMPORTANT]
+> **Version 2.0.0 introduced breaking changes**. Read through this readme to see what changed, or
+> check [the changelog](./CHANGELOG.md).
+
 ## Usage
 
 1. Install the library by running
-   `zig fetch --save https://git.sr.ht/~reykjalin/log_to_file.zig/archive/1.0.0.tar.gz`
+   `zig fetch --save git+https://git.sr.ht/~reykjalin/log_to_file.zig`
    in your project.
+    * You can also use `zig fetch --save git+https://github.com/reykjalin/log_to_file.zig.git` if you prefer.
 2. Add the library as a dependency in your project's `build.zig`:
 
 ```zig
@@ -46,18 +47,48 @@ pub const std_options: std.Options = .{
 };
 ```
 
-Now, whenever you call the `std.log` functions they should be written to a `log` file in your
-current working directory.
+Now, whenever you call the `std.log` functions they should be written to a `logs/out.log` file in
+your current working directory when you make a `Debug` build, and `~/.local/logs/out.log` in a
+`Relase` build.
 
 ## Configuration
+
+[The examples](./examples/README.md) are a great resource to play with to understand how the
+library works.
 
 If you'd like to write logs to a different path you can configure that by adding this to your root
 source file (typically `src/main.zig` or similar):
 
 ```zig
-// Relative to current working directory:
-pub const log_to_file_path = "logs/app.log";
+const ltf = @import("log_to_file");
 
-// Absolute path:
-pub const log_to_file_path = "/var/logs/app.log";
+// Logs will be saved to:
+//   * ./logs/log in Debug mode.
+//   * ~/.local/logs/log in Release mode.
+pub const log_to_file_options: ltf.Options = .{
+    .log_file_name = "log",
+};
+
+// Logs will be saved to:
+//   * ./new-logs/out.log in Debug mode.
+//   * ./new-logs/out.log in Release mode.
+pub const log_to_file_options: ltf.Options = .{
+    .storage_path = "new-logs",
+};
+
+// Logs will be saved to:
+//   * ./app-logs/out.log in Debug mode.
+//   * ./app-logs/out.log in Release mode.
+pub const log_to_file_options: ltf.Options = .{
+    .log_file_name = "app.log",
+    .storage_path = "app-logs",
+};
+
+// Logs will be saved to:
+//   * /var/logs/app.log in Debug mode.
+//   * /var/logs/app.log in Release mode.
+pub const log_to_file_options: ltf.Options = .{
+    .log_file_name = "app.log",
+    .storage_path = "/var/logs",
+};
 ```
