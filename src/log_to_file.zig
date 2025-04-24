@@ -5,29 +5,32 @@ const std = @import("std");
 const builtin = @import("builtin");
 const root = @import("root");
 
+/// Use to configure where log files are stored and what the log file is called.
 pub const Options = struct {
+    /// Set to change what the log file will be called. If unset the file name will be
+    /// `<executable_name>.log`.
     log_file_name: ?[]const u8 = null,
+    /// Set to the directory where the log file will be stored. Supports absolute paths and relative
+    /// paths. If set to a relative path logs will be store relative to where the executable is run
+    /// from **not** where the executable is saved.
+    ///
+    /// If unset the logs will be stored in `./logs/` when compiled in debug mode and
+    /// `~/.local/state/logs/` in any other mode.
     storage_path: ?[]const u8 = null,
 };
 
-var options: Options = if (@hasDecl(root, "log_to_file_options"))
-    .{
-        .log_file_name = root.log_to_file_options.log_file_name,
-        .storage_path = if (root.log_to_file_options.storage_path) |p|
-            p
-        else if (builtin.mode == .Debug)
-            "logs"
-        else
-            null,
-    }
-else
-    .{
-        .log_file_name = null,
-        .storage_path = if (builtin.mode == .Debug)
-            "logs"
-        else
-            null,
-    };
+var options: Options = .{
+    .log_file_name = if (@hasDecl(root, "log_to_file_options"))
+        root.log_to_file_options.log_file_name
+    else
+        null,
+    .storage_path = if (root.log_to_file_options.storage_path) |p|
+        p
+    else if (builtin.mode == .Debug)
+        "logs"
+    else
+        null,
+};
 
 var buffer_for_allocator: [std.fs.max_path_bytes * 10]u8 = undefined;
 var fb_allocator = std.heap.FixedBufferAllocator.init(&buffer_for_allocator);
@@ -74,6 +77,14 @@ fn maybeInitStoragePath() void {
     };
 }
 
+/// Replacement function that sends `std.log.{debug,info,warn,err}` logs to a file instead of to
+/// stderr. Assign to `std_options.logFn` in your root file.
+///
+/// When compiled in debug mode logs will go to `./logs/<executable_name>`.log. When compiled in any
+/// other mode logs will go to `~/.local/state/logs/<executable_name>.log`.
+///
+/// You can change where the logs are stored, or specify a different file name for the log file
+/// itself by changing `log_to_file_options` in your root file.
 pub fn log_to_file(
     comptime message_level: std.log.Level,
     comptime scope: @TypeOf(.enum_literal),

@@ -29,26 +29,41 @@ pub fn build(b: *std.Build) void {
 
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const root_source_file = b.path("src/log_to_file.zig");
 
     // TODO: figure out why stripping debug symbols causes an issue.
     // const strip = b.option(bool, "strip", "Strip debug symbols") orelse
     //     if (optimize == .Debug) false else true;
 
     const ltf = b.addModule("log_to_file", .{
-        .root_source_file = b.path("src/log_to_file.zig"),
+        .root_source_file = root_source_file,
         .target = target,
         .optimize = optimize,
         // .strip = strip,
     });
 
     // Add a check for ZLS to build-on-save.
-    const ltf_check = b.addModule("log_to_file", .{
-        .root_source_file = b.path("src/log_to_file.zig"),
+    const ltf_check = b.addExecutable(.{
+        .name = "log_to_file",
+        .root_module = ltf,
+    });
+    const check = b.step("check", "Check if log_to_file compiles");
+    check.dependOn(&ltf_check.step);
+
+    // Build docs.
+    const docs_obj = b.addObject(.{
+        .name = "log_to_file",
+        .root_source_file = root_source_file,
         .target = target,
         .optimize = optimize,
     });
-    const check = b.step("check", "Check if log_to_file compiles");
-    check.dependsOn(&ltf_check);
+    const install_docs = b.addInstallDirectory(.{
+        .source_dir = docs_obj.getEmittedDocs(),
+        .install_dir = .prefix,
+        .install_subdir = "docs",
+    });
+    const docs = b.step("docs", "Build log_to_file library docs");
+    docs.dependOn(&install_docs.step);
 
     const maybe_example = b.option(Example, "example", "Run an example");
     if (maybe_example) |example| {
