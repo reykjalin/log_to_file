@@ -1,12 +1,14 @@
 # log_to_file
 
+[API docs](https://reykjalin.srht.site/docs/log_to_file/)
+
 An easy way to change Zig's default `std.log` functions to write to a file instead of logging to
-STDOUT/STDERR.
+stderr.
 
 > [!NOTE]
 > **This is not a logging library!**
 > It offers a function you can pass to Zig's `std_options`'s `.logFn` so `std.log` calls write to a
-> file instead of STDOUT.
+> file instead of stderr.
 
 > [!IMPORTANT]
 > **Version 2.0.0 introduced breaking changes**. Read through this readme to see what changed, or
