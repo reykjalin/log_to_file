@@ -14,6 +14,7 @@ const Example = enum {
 };
 
 pub fn build(b: *std.Build) void {
+    // Enforce minimum zig version.
     if (comptime (builtin.zig_version.order(minimum_zig_version) == .lt)) {
         @compileError(std.fmt.comptimePrint(
             \\Your Zig version does not meet the minimum build requirement:
@@ -29,7 +30,8 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // const strip = b.option(bool, "strip", "Omit debug information") orelse
+    // TODO: figure out why stripping debug symbols causes an issue.
+    // const strip = b.option(bool, "strip", "Strip debug symbols") orelse
     //     if (optimize == .Debug) false else true;
 
     const ltf = b.addModule("log_to_file", .{
@@ -38,6 +40,15 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         // .strip = strip,
     });
+
+    // Add a check for ZLS to build-on-save.
+    const ltf_check = b.addModule("log_to_file", .{
+        .root_source_file = b.path("src/log_to_file.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    const check = b.step("check", "Check if log_to_file compiles");
+    check.dependsOn(&ltf_check);
 
     const maybe_example = b.option(Example, "example", "Run an example");
     if (maybe_example) |example| {
