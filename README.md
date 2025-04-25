@@ -21,9 +21,9 @@ stderr.
 > fallback to `std.log.defaultLog()` instead of silently failing.
 
 1. Install the library by running
-   `zig fetch --save https://git.sr.ht/~reykjalin/log_to_file/archive/2.0.0.tar.gz`
+   `zig fetch --save https://git.sr.ht/~reykjalin/log_to_file/archive/2.1.0.tar.gz`
    in your project.
-    * You can also use `zig fetch --save https://github.com/reykjalin/log_to_file/archive/refs/tags/2.0.0.zip` if you prefer.
+    * You can also use `zig fetch --save https://github.com/reykjalin/log_to_file/archive/refs/tags/2.1.0.zip` if you prefer.
 2. Add the library as a dependency in your project's `build.zig`:
 
 ```zig
