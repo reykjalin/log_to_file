@@ -1,0 +1,11 @@
+image: alpine/edge
+packages:
+  - zig
+  - git
+sources:
+  - https://git.sr.ht/~reykjalin/log_to_file
+tasks:
+  - compile: |
+      cd log_to_file
+      zig build -Dexample=defaults
+      zig build -Dexample=defaults -Doptimize=ReleaseSafe

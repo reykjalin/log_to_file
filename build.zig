@@ -54,7 +54,7 @@ pub fn build(b: *std.Build) void {
     check.dependOn(&ltf_check.step);
 
     // Build docs.
-    const docs_obj = b.addObject(.{
+    const docs_obj = b.addStaticLibrary(.{
         .name = "log_to_file",
         .root_source_file = root_source_file,
         .target = target,
