@@ -4,7 +4,7 @@
 .{
     .name = .log_to_file,
     .fingerprint = 0x53bc1f48033cc1bd,
-    .version = "2.0.0",
+    .version = "2.1.0",
     .minimum_zig_version = "0.14.0",
     .paths = .{
         "build.zig",

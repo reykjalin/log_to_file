@@ -43,10 +43,13 @@ pub fn build(b: *std.Build) void {
     });
 
     // Add a check for ZLS to build-on-save.
-    const ltf_check = b.addStaticLibrary(.{
+    const ltf_check = b.addExecutable(.{
         .name = "log_to_file",
-        .root_module = ltf,
+        .root_source_file = b.path("examples/defaults.zig"),
+        .target = target,
+        .optimize = optimize,
     });
+    ltf_check.root_module.addImport("log_to_file", ltf);
     const check = b.step("check", "Check if log_to_file compiles");
     check.dependOn(&ltf_check.step);
 

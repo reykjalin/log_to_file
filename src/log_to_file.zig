@@ -1,5 +1,14 @@
-// Copyright 2024 - 2025, Kristófer Reykjalín and the log_to_file contributors.
-// SPDX-License-Identifier: BSD-3-Clause
+//! `log_to_file` gives you a pre-made, easily configurable logging function that you can use
+//! instead of the `std.log.defaultLog` function from the Zig standard library.
+//!
+//! When compiled in debug mode logs will go to `./logs/<executable_name>.log`. When compiled in any
+//! other mode logs will go to `~/.local/state/<executable_name>/<executable_name>.log`.
+//!
+//! You can change where the logs are stored, or specify a different file name for the log file
+//! itself by changing `Options` in your root file.
+//!
+//! Copyright 2024 - 2025, Kristófer Reykjalín and the `log_to_file` contributors.
+//! SPDX-License-Identifier: BSD-3-Clause
 
 const std = @import("std");
 const builtin = @import("builtin");
@@ -8,14 +17,16 @@ const root = @import("root");
 /// Use to configure where log files are stored and what the log file is called.
 pub const Options = struct {
     /// Set to change what the log file will be called. If unset the file name will be
-    /// `<executable_name>.log`.
+    /// `<executable_name>.log`. Falls back to `out.log` when executable name can't be determined.
     log_file_name: ?[]const u8 = null,
     /// Set to the directory where the log file will be stored. Supports absolute paths and relative
     /// paths. If set to a relative path logs will be store relative to where the executable is run
     /// from **not** where the executable is saved.
     ///
     /// If unset the logs will be stored in `./logs/` when compiled in debug mode and
-    /// `~/.local/state/logs/` in any other mode.
+    /// `~/.local/state/<executable_name>/` in any other mode.
+    ///
+    /// Falls back to `~/.cache/logs/out.log` if executable name can't be determined.
     storage_path: ?[]const u8 = null,
 };
 
@@ -24,8 +35,9 @@ var options: Options = .{
         root.log_to_file_options.log_file_name
     else
         null,
-    .storage_path = if (root.log_to_file_options.storage_path) |p|
-        p
+    .storage_path = if (@hasDecl(root, "log_to_file_options") and
+        root.log_to_file_options.storage_path != null)
+        root.log_to_file_options.storage_path
     else if (builtin.mode == .Debug)
         "logs"
     else
@@ -64,13 +76,30 @@ fn maybeInitStoragePath() void {
     if (options.storage_path != null) return;
 
     const home = std.process.getEnvVarOwned(fba, "HOME") catch {
+        options.storage_path = "logs";
         return;
     };
+
+    var buf: [std.fs.max_path_bytes]u8 = undefined;
+    const exe_path = std.fs.selfExePath(&buf) catch {
+        // Fallback to ephemeral logs in `~/.cache/logs/`.
+        options.storage_path = std.fs.path.join(fba, &.{
+            home,
+            ".cache",
+            "logs",
+        }) catch {
+            options.storage_path = "logs";
+            return;
+        };
+        return;
+    };
+    const exe_name = std.fs.path.basename(exe_path);
 
     options.storage_path = std.fs.path.join(fba, &.{
         home,
         ".local",
-        "logs",
+        "state",
+        exe_name,
     }) catch {
         options.storage_path = "logs";
         return;
@@ -78,13 +107,13 @@ fn maybeInitStoragePath() void {
 }
 
 /// Replacement function that sends `std.log.{debug,info,warn,err}` logs to a file instead of to
-/// stderr. Assign to `std_options.logFn` in your root file.
+/// stderr. Assign to `logFn` in `std.Options` in your root file.
 ///
-/// When compiled in debug mode logs will go to `./logs/<executable_name>`.log. When compiled in any
-/// other mode logs will go to `~/.local/state/logs/<executable_name>.log`.
+/// When compiled in debug mode logs will go to `./logs/<executable_name>.log`. When compiled in any
+/// other mode logs will go to `~/.local/state/<executable_name>/<executable_name>.log`.
 ///
 /// You can change where the logs are stored, or specify a different file name for the log file
-/// itself by changing `log_to_file_options` in your root file.
+/// itself by changing `Options` in your root file.
 pub fn log_to_file(
     comptime message_level: std.log.Level,
     comptime scope: @TypeOf(.enum_literal),

@@ -16,4 +16,4 @@ with `zig build -Doptimize=<example> -Doptimize=ReleaseFast run`.
 
 > [!IMPORTANT]
 > When in release mode the `defaults` and `custom_log_file` examples will store logs in
-> `~/.local/logs/example.log` and `~/.local/logs/custom-file.log` respectively.
+> `~/.local/state/logs/example.log` and `~/.local/state/logs/custom-file.log` respectively.

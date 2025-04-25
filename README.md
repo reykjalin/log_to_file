@@ -55,7 +55,7 @@ pub const std_options: std.Options = .{
 
 Now, whenever you call the `std.log` functions they should be written to a
 `logs/<executable_name>.log` file in your current working directory when you make a `Debug` build,
-and `~/.local/logs/<executable_name>.log` in a `Release` build.
+and `~/.local/state/logs/<executable_name>.log` in a `Release` build.
 
 For example, if your executable is called `example` (as is the case with
 [the examples](./examples/README.md)) the logs will be in `./logs/example.log` by default in a
@@ -74,7 +74,7 @@ const ltf = @import("log_to_file");
 
 // Logs will be saved to:
 //   * ./logs/log in Debug mode.
-//   * ~/.local/logs/log in Release mode.
+//   * ~/.local/state/logs/log in Release mode.
 pub const log_to_file_options: ltf.Options = .{
     .log_file_name = "log",
 };

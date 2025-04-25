@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.0
+
+* The default, no-config log location is now
+  `~/.local/state/<executable_name>/<executable_name>.log` **in `ReleaseFast`,
+  `ReleaseSmall`, and `ReleaseSafe` modes**.
+* If we can't get `<executable_name>` the default location becomes `~/.cache/logs/out.log` **in
+  `ReleaseFast`, `ReleaseSmall`, and `ReleaseSafe` modes**.
+
 ## 2.0.0
 
 ### Bug fixes
