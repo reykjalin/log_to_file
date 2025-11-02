@@ -151,7 +151,7 @@ pub fn log_to_file(
 
     // Get a writer.
     // See https://ziglang.org/documentation/0.15.1/std/#std.log.defaultLog.
-    var buffer: [4096]u8 = undefined;
+    var buffer: [64]u8 = undefined;
     var log_writer = log.writer(&buffer);
 
     // Move the write index to the end of the file.
