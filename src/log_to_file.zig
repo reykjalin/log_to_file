@@ -134,6 +134,10 @@ pub fn log_to_file(
     const level_txt = comptime message_level.asText();
     const prefix2 = if (scope == .default) ": " else "(" ++ @tagName(scope) ++ "): ";
 
+    // We could be logging from different threads so we use a mutex here.
+    write_to_log_mutex.lock();
+    defer write_to_log_mutex.unlock();
+
     // Get a handle for the log file.
     const cwd = std.fs.cwd();
 
@@ -145,25 +149,24 @@ pub fn log_to_file(
         .{ .truncate = false },
     ) catch return std.log.defaultLog(message_level, scope, format, args);
 
-    // Move the write index to the end of the file.
-    log.seekFromEnd(0) catch return std.log.defaultLog(message_level, scope, format, args);
-
     // Get a writer.
-    // See https://ziglang.org/documentation/0.14.0/std/#std.log.defaultLog.
-    const log_writer = log.writer();
-    var bw = std.io.bufferedWriter(log_writer);
-    const writer = bw.writer();
+    // See https://ziglang.org/documentation/0.15.1/std/#std.log.defaultLog.
+    var buffer: [4096]u8 = undefined;
+    var log_writer = log.writer(&buffer);
 
-    // We could be logging from different threads so we use a mutex here.
-    write_to_log_mutex.lock();
-    defer write_to_log_mutex.unlock();
+    // Move the write index to the end of the file.
+    const end_pos = log.getEndPos() catch return std.log.defaultLog(message_level, scope, format, args);
+    log_writer.seekTo(end_pos) catch return std.log.defaultLog(message_level, scope, format, args);
+
+    var writer = &log_writer.interface;
 
     // Write to the log file.
-    // See https://ziglang.org/documentation/0.14.0/std/#std.log.defaultLog.
+    // See https://ziglang.org/documentation/0.15.1/std/#std.log.defaultLog.
     nosuspend {
         writer.print(level_txt ++ prefix2 ++ format ++ "\n", args) catch
             return std.log.defaultLog(message_level, scope, format, args);
 
-        bw.flush() catch return std.log.defaultLog(message_level, scope, format, args);
+        writer.flush() catch
+            return std.log.defaultLog(message_level, scope, format, args);
     }
 }

@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.0
+
+* Updated the build file and implementaiton to support Zig 0.15.1 and newer.
+
 ## 2.1.0
 
 * The default, no-config log location is now

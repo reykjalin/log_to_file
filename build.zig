@@ -45,20 +45,21 @@ pub fn build(b: *std.Build) void {
     // Add a check for ZLS to build-on-save.
     const ltf_check = b.addExecutable(.{
         .name = "log_to_file",
-        .root_source_file = b.path("examples/defaults.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("examples/defaults.zig"),
+            .optimize = optimize,
+            .target = target,
+        }),
     });
     ltf_check.root_module.addImport("log_to_file", ltf);
     const check = b.step("check", "Check if log_to_file compiles");
     check.dependOn(&ltf_check.step);
 
     // Build docs.
-    const docs_obj = b.addStaticLibrary(.{
+    const docs_obj = b.addLibrary(.{
         .name = "log_to_file",
-        .root_source_file = root_source_file,
-        .target = target,
-        .optimize = optimize,
+        .root_module = ltf,
+        .linkage = .static,
     });
     const install_docs = b.addInstallDirectory(.{
         .source_dir = docs_obj.getEmittedDocs(),
@@ -79,9 +80,11 @@ pub fn build(b: *std.Build) void {
 
         const exe = b.addExecutable(.{
             .name = "example",
-            .root_source_file = source_file,
-            .target = target,
-            .optimize = optimize,
+            .root_module = b.createModule(.{
+                .root_source_file = source_file,
+                .optimize = optimize,
+                .target = target,
+            }),
         });
 
         exe.root_module.addImport("log_to_file", ltf);
